@@ -11,7 +11,26 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
 
   @override
   Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
+    final version =
+        await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
+  }
+
+  @override
+  Future<void> sendMessage(Map<String, dynamic> message) async {
+    try {
+      await methodChannel
+          .invokeMethod<void>('sendMessage', {'message': message});
+    } on PlatformException {
+      throw ArgumentError('Unable to send message $message');
+    }
+  }
+
+  @override
+  Stream<Map<String, dynamic>> onMessageReceived() {
+    const EventChannel eventChannel = EventChannel('wear_communicator_events');
+    return eventChannel
+        .receiveBroadcastStream()
+        .map((event) => event as Map<String, dynamic>);
   }
 }
