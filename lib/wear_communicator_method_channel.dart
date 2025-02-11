@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -29,8 +30,21 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
   @override
   Stream<Map<String, dynamic>> onMessageReceived() {
     const EventChannel eventChannel = EventChannel('wear_communicator_events');
-    return eventChannel
-        .receiveBroadcastStream()
-        .map((event) => event as Map<String, dynamic>);
+    return eventChannel.receiveBroadcastStream().map((event) {
+      log('f: onMessageReceived / event : $event / type : ${event.runtimeType}',
+          name: runtimeType.toString());
+      Map<String, dynamic> result = {};
+      try {
+        result = Map<String, dynamic>.from(
+          event.map((key, value) => MapEntry(key.toString(), value)),
+        );
+        log('f: onMessageReceived / result : $result / type : ${result.runtimeType}',
+            name: runtimeType.toString());
+      } catch (e) {
+        log('f: onMessageReceived parsing failed: $e',
+            name: runtimeType.toString());
+      }
+      return result;
+    });
   }
 }

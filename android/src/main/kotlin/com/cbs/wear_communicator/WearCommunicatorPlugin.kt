@@ -33,11 +33,16 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
     methodChannel.setMethodCallHandler(this)
     eventChannel.setStreamHandler(this)
     context = flutterPluginBinding.applicationContext
+    startListeningForMessages()
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     methodChannel.setMethodCallHandler(null)
     eventChannel.setStreamHandler(null)
+    val messageClient = Wearable.getMessageClient(context)
+    messageClient.removeListener{ event ->
+      Log.d(tag, "Listener removed.")
+    }
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
@@ -85,7 +90,6 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
     eventSink = events
-    startListeningForMessages()
   }
 
   override fun onCancel(arguments: Any?) {
