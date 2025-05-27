@@ -11,7 +11,11 @@ class WearCommunicator {
   }
 
   /// Stream to listen for messages from the wearable device.
-  Stream<Map<String, dynamic>> onMessageReceived() {
-    return WearCommunicatorPlatform.instance.onMessageReceived();
-  }
+  ValueStream<Map<String, dynamic>> get messageStream =>
+      WearCommunicatorPlatform.instance.messageStream;
+
+  ValueStream<List<String>> get deviceChangeStream =>
+      WearCommunicatorPlatform.instance.connectionStream;
+
+  void dispose() => WearCommunicatorPlatform.instance.dispose();
 }

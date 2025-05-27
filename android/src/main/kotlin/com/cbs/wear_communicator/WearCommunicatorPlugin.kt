@@ -10,7 +10,6 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.StreamHandler
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
 
 import org.json.JSONObject
 
@@ -26,10 +25,9 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
   private val tag = "WearCommunicator"
   private lateinit var context: Context
 
-
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "wear_communicator")
-    eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "wear_communicator_events")
+    eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "wear_communicator_event")
     methodChannel.setMethodCallHandler(this)
     eventChannel.setStreamHandler(this)
     context = flutterPluginBinding.applicationContext
@@ -45,7 +43,7 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
     }
   }
 
-  override fun onMethodCall(call: MethodCall, result: Result) {
+  override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
       "sendMessage" -> {
         val message = call.argument<Map<String, Any>>("message")
@@ -55,6 +53,9 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
         } else {
           result.error("INVALID_ARGUMENT", "Message is null", null)
         }
+      }
+      "getConnectedDevices" -> {
+        getConnectedDevices(result)
       }
       "getPlatformVersion" -> {
         result.success("Android ${android.os.Build.VERSION.RELEASE}")
@@ -89,6 +90,10 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
   }
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+    if (eventSink != null) {
+      Log.w(tag, "Event sink already active. Ignoring additional listener.")
+      return
+    }
     eventSink = events
   }
 
@@ -120,4 +125,15 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
     return map
   }
 
+  private fun getConnectedDevices(result: MethodChannel.Result) {
+    Wearable.getNodeClient(context).connectedNodes
+      .addOnSuccessListener { nodes ->
+        val names = nodes.map { it.displayName }
+        result.success(names) // 반환
+      }
+      .addOnFailureListener { e ->
+        Log.e(tag, "Failed to get connected nodes", e)
+        result.error("GET_CONNECTED_FAILED", e.message, null)
+      }
+  }
 }

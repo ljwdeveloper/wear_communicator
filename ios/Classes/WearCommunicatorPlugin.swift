@@ -1,6 +1,7 @@
 import Flutter
 import WatchConnectivity
 
+@objc
 public class WearCommunicatorPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, WCSessionDelegate {
     private var methodChannel: FlutterMethodChannel?
     private var eventChannel: FlutterEventChannel?
@@ -12,7 +13,7 @@ public class WearCommunicatorPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let instance = WearCommunicatorPlugin()
 
         instance.methodChannel = FlutterMethodChannel(name: "wear_communicator", binaryMessenger: registrar.messenger())
-        instance.eventChannel = FlutterEventChannel(name: "wear_communicator_events", binaryMessenger: registrar.messenger())
+        instance.eventChannel = FlutterEventChannel(name: "wear_communicator_event", binaryMessenger: registrar.messenger())
         
         registrar.addMethodCallDelegate(instance, channel: instance.methodChannel!)
         instance.eventChannel?.setStreamHandler(instance)
@@ -21,6 +22,7 @@ public class WearCommunicatorPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             instance.session.delegate = instance
             instance.session.activate()
         }
+        print("[WearCommunicator] Plugin registered successfully.")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -89,20 +91,21 @@ public class WearCommunicatorPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
 
     public func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
         if let error = error {
-            print("\(tag) - WCSession activation failed: \(error.localizedDescription)")
+            print("[\(tag)] WCSession activation failed: \(error.localizedDescription)")
         } else {
-            print("\(tag) - WCSession activated with state: \(state.rawValue)")
+            print("[\(tag)] WCSession activated with state: \(state.rawValue)")
         }
     }
 
     #if os(iOS)
     public func sessionDidBecomeInactive(_ session: WCSession) {
-        print("\(tag) - WCSession did become inactive")
+        print("[\(tag)] WCSession did become inactive")
     }
 
     public func sessionDidDeactivate(_ session: WCSession) {
-        print("\(tag) - WCSession did deactivate, reactivating session...")
+        print("[\(tag)] WCSession did deactivate, reactivating session...")
         session.activate()
     }
     #endif
+    
 }

@@ -1,6 +1,8 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:rxdart/rxdart.dart';
 
 import 'wear_communicator_method_channel.dart';
+export 'package:rxdart/rxdart.dart';
 
 abstract class WearCommunicatorPlatform extends PlatformInterface {
   /// Constructs a WearCommunicatorPlatform.
@@ -33,7 +35,17 @@ abstract class WearCommunicatorPlatform extends PlatformInterface {
   }
 
   /// Receives a message from the wearable device.
-  Stream<Map<String, dynamic>> onMessageReceived() {
-    throw UnimplementedError('onMessageReceived() has not been implemented.');
+  ValueStream<Map<String, dynamic>> get messageStream {
+    throw UnimplementedError('messageStream getter has not been implemented.');
+  }
+
+  ValueStream<List<String>> get connectionStream {
+    throw UnimplementedError(
+      'connectionStream getter has not been implemented.',
+    );
+  }
+
+  void dispose() {
+    throw UnimplementedError('dispose() has not been implemented.');
   }
 }

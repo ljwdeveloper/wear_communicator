@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -9,11 +10,13 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('wear_communicator');
+  static const _eventChannel = EventChannel('wear_communicator_event');
 
   @override
   Future<String?> getPlatformVersion() async {
-    final version =
-        await methodChannel.invokeMethod<String>('getPlatformVersion');
+    final version = await methodChannel.invokeMethod<String>(
+      'getPlatformVersion',
+    );
     return version;
   }
 
@@ -26,42 +29,98 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
     //   throw ArgumentError('Unable to send message $message');
     // }
     try {
-      await methodChannel
-          .invokeMethod<void>('sendMessage', {'message': message});
+      await methodChannel.invokeMethod<void>('sendMessage', {
+        'message': message,
+      });
     } on PlatformException catch (e) {
-      log('sendMessage failed: ${e.message}',
-          error: e, name: 'MethodChannelWearCommunicator');
+      log(
+        'sendMessage failed: ${e.message}',
+        error: e,
+        name: 'MethodChannelWearCommunicator',
+      );
       throw Exception('Failed to send message: ${e.message}');
     } catch (e) {
-      log('Unexpected error in sendMessage: $e',
-          name: 'MethodChannelWearCommunicator');
+      log(
+        'Unexpected error in sendMessage: $e',
+        name: 'MethodChannelWearCommunicator',
+      );
       throw Exception('Unexpected error while sending message');
     }
   }
 
+  final BehaviorSubject<Map<String, dynamic>> _messageSubject =
+      BehaviorSubject.seeded({});
+  final BehaviorSubject<List<String>> _connectionSubject =
+      BehaviorSubject.seeded([]);
+
+  MethodChannelWearCommunicator() {
+    _listenToUnifiedEventChannel();
+    _makeConnectionStream();
+  }
+
+  void _listenToUnifiedEventChannel() {
+    _eventChannel.receiveBroadcastStream().listen(
+      (event) {
+        log('🔔 Event received from native: $event');
+
+        if (event is Map) {
+          final parsed = Map<String, dynamic>.from(
+            event.map((k, v) => MapEntry(k.toString(), v)),
+          );
+
+          // if (parsed.containsKey("devices") && parsed["devices"] is List) {
+          //   try {
+          //     final devices = List<String>.from(parsed["devices"]);
+          //     _connectionSubject.add(devices);
+          //     return;
+          //   } catch (e) {
+          //     log('Failed to parse device list: $e');
+          //   }
+          // }
+
+          // 메시지 이벤트 처리
+          _messageSubject.add(parsed);
+        }
+      },
+      onError: (error) {
+        log('Unified event stream error: $error');
+      },
+    );
+  }
+
   @override
-  Stream<Map<String, dynamic>> onMessageReceived() {
-    const EventChannel eventChannel = EventChannel('wear_communicator_events');
-    return eventChannel
-        .receiveBroadcastStream()
-        .map<Map<String, dynamic>>((event) {
-      log('f: onMessageReceived / event : $event / type : ${event.runtimeType}',
-          name: runtimeType.toString());
-      Map<String, dynamic> result = {};
-      try {
-        result = Map<String, dynamic>.from(
-          event.map((key, value) => MapEntry(key.toString(), value)),
-        );
-        log('f: onMessageReceived / result : $result / type : ${result.runtimeType}',
-            name: runtimeType.toString());
-      } catch (e, stackTrace) {
-        log('f: onMessageReceived parsing failed: $e\n\n$stackTrace',
-            name: runtimeType.toString());
-      }
-      return result;
-    }).handleError((error) {
-      log('Error in onMessageReceived: $error',
-          name: 'MethodChannelWearCommunicator');
+  ValueStream<Map<String, dynamic>> get messageStream => _messageSubject.stream;
+
+  @override
+  ValueStream<List<String>> get connectionStream => _connectionSubject.stream;
+
+  Timer? _connectionTimer;
+  void _makeConnectionStream() async {
+    var first = await _getConnectedDevices();
+    _connectionSubject.add(first);
+    _connectionTimer = Timer.periodic(Duration(seconds: 10), (_) async {
+      var devices = await _getConnectedDevices();
+      _connectionSubject.add(devices);
     });
+  }
+
+  Future<List<String>> _getConnectedDevices() async {
+    final raw = await methodChannel
+        .invokeMethod<List<dynamic>>('getConnectedDevices')
+        .timeout(Duration(seconds: 1), onTimeout: () => null);
+    if (raw == null || raw.isEmpty) return [];
+    var result = raw.map((value) => value.toString()).toList();
+    return result;
+  }
+
+  @override
+  void dispose() {
+    if (!_messageSubject.isClosed) {
+      _messageSubject.close();
+    }
+    if (!_connectionSubject.isClosed) {
+      _connectionSubject.close();
+    }
+    _connectionTimer?.cancel();
   }
 }
