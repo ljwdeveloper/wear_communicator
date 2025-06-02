@@ -14,7 +14,7 @@ class WearCommunicator {
   ValueStream<Map<String, dynamic>> get messageStream =>
       WearCommunicatorPlatform.instance.messageStream;
 
-  ValueStream<List<String>> get deviceChangeStream =>
+  ValueStream<List<Map<String, dynamic>>> get deviceChangeStream =>
       WearCommunicatorPlatform.instance.connectionStream;
 
   void dispose() => WearCommunicatorPlatform.instance.dispose();

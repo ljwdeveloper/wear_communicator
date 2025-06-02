@@ -39,7 +39,7 @@ abstract class WearCommunicatorPlatform extends PlatformInterface {
     throw UnimplementedError('messageStream getter has not been implemented.');
   }
 
-  ValueStream<List<String>> get connectionStream {
+  ValueStream<List<Map<String, dynamic>>> get connectionStream {
     throw UnimplementedError(
       'connectionStream getter has not been implemented.',
     );

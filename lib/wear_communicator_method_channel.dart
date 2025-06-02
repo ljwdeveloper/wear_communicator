@@ -50,7 +50,7 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
 
   final BehaviorSubject<Map<String, dynamic>> _messageSubject =
       BehaviorSubject.seeded({});
-  final BehaviorSubject<List<String>> _connectionSubject =
+  final BehaviorSubject<List<Map<String, dynamic>>> _connectionSubject =
       BehaviorSubject.seeded([]);
 
   MethodChannelWearCommunicator() {
@@ -92,7 +92,8 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
   ValueStream<Map<String, dynamic>> get messageStream => _messageSubject.stream;
 
   @override
-  ValueStream<List<String>> get connectionStream => _connectionSubject.stream;
+  ValueStream<List<Map<String, dynamic>>> get connectionStream =>
+      _connectionSubject.stream;
 
   Timer? _connectionTimer;
   void _makeConnectionStream() async {
@@ -104,12 +105,13 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
     });
   }
 
-  Future<List<String>> _getConnectedDevices() async {
+  Future<List<Map<String, dynamic>>> _getConnectedDevices() async {
+    // 이 메서드 통해서 현재의 디바이스 Node ID를 최신화한다.
     final raw = await methodChannel
         .invokeMethod<List<dynamic>>('getConnectedDevices')
         .timeout(Duration(seconds: 1), onTimeout: () => null);
     if (raw == null || raw.isEmpty) return [];
-    var result = raw.map((value) => value.toString()).toList();
+    var result = raw.map((value) => Map<String, dynamic>.from(value)).toList();
     return result;
   }
 
