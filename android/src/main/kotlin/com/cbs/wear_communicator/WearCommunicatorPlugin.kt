@@ -33,7 +33,7 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
   private lateinit var methodChannel: MethodChannel
   private lateinit var eventChannel: EventChannel
   private var eventSink: EventChannel.EventSink? = null
-  private val tag = "WearCommunicator"
+  private val tag = "WearCommunicatorPlugin"
   private lateinit var context: Context
   private var isDetachedFromEngine: Boolean = true
   private var isMessageListenerEmpty: Boolean = true
@@ -83,10 +83,6 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
           result.error("INVALID_ARGUMENT", "uriString is null", null)
         }
       }
-//      "startMediaService" -> {
-//        val play = call.arguments as? Boolean ?: true
-//        startMediaService(result, play)
-//      }
       "sendMessage" -> {
         val message = call.arguments as? Map<String, String>
         if (message != null) {
@@ -230,11 +226,12 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
         override fun onConnected() {
           browser?.let {
             val controller = MediaControllerCompat(context, it.sessionToken)
-            if(play == true) {
-              controller.transportControls.play()
-            }else {
-              controller.transportControls.pause()
-            }
+            // getLastCtrl 때문에 불필요?
+            // if(play == true) {
+            //   controller.transportControls.play()
+            // }else {
+            //   controller.transportControls.pause()
+            // }
             Log.d(tag, "MediaBrowserCompat ${packageName}    ${className}\nconnected and issued play command")
           } ?: Log.e(tag, "MediaBrowserCompat is null on connected")
         }
@@ -309,8 +306,9 @@ class WearCommunicatorPlugin: FlutterPlugin, MethodCallHandler, StreamHandler {
           }
       }
       .addOnFailureListener { e ->
-        Log.e(tag, "Failed to get local node", e)
+        // Log.e(tag, "Failed to get local node", e)
         result.error("GET_LOCAL_NODE_FAILED", e.message, null)
+        // result.success([])
       }
 
   }

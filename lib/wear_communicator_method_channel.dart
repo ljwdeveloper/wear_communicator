@@ -233,12 +233,19 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
 
   Future<List<ConnectedDeviceEntity>> _getConnectedDevices() async {
     // 이 메서드 통해서 현재의 디바이스 Node ID를 최신화한다.
-    List<dynamic>? raw = await methodChannel
-        .invokeListMethod('getConnectedDevices')
-        .timeout(Duration(seconds: 3), onTimeout: () => null);
-    if (raw?.isEmpty ?? true) return [];
+    List<dynamic> raw = [];
+    try {
+      raw = await methodChannel
+              .invokeListMethod('getConnectedDevices')
+              .timeout(Duration(seconds: 3), onTimeout: () => null) ??
+          [];
+    } catch (e) {
+      log('_getConnectedDevices error: $e',
+          error: e, name: 'MethodChannelWearCommunicator');
+    }
+    if (raw.isEmpty) return [];
     // [{id: b99c78f0, name: Galaxy Z Fold4, isNearby: true}, {id: 38ac9e77, name: Galaxy Watch6 Classic (YPXM), isNearby: true}]
-    var result = raw!
+    var result = raw
         .map((value) =>
             ConnectedDeviceEntity.fromJson(Map<String, dynamic>.from(value)))
         .toList();
@@ -251,15 +258,16 @@ class MethodChannelWearCommunicator extends WearCommunicatorPlatform {
 
   @override
   void dispose() {
-    if (!_commandSubject.isClosed) {
-      _commandSubject.close();
-    }
-    if (!_stateSubject.isClosed) {
-      _stateSubject.close();
-    }
-    if (!_connectionSubject.isClosed) {
-      _connectionSubject.close();
-    }
+    log('dispose', name: 'MethodChannelWearCommunicator');
+    // if (!_commandSubject.isClosed) {
+    //   _commandSubject.close();
+    // }
+    // if (!_stateSubject.isClosed) {
+    //   _stateSubject.close();
+    // }
+    // if (!_connectionSubject.isClosed) {
+    //   _connectionSubject.close();
+    // }
     _connectionTimer?.cancel();
   }
 }
