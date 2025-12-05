@@ -40,24 +40,97 @@ class ConnectedDeviceEntity {
   bool get isEmpty => id.isEmpty;
 }
 
+class SimplePodcastEntity {
+  final String title;
+  final String subtitle;
+  final String artUrl;
+  final String streamUrl;
+  final int position;
+  final int duration;
+
+  SimplePodcastEntity({
+    required this.title,
+    required this.subtitle,
+    required this.artUrl,
+    required this.streamUrl,
+    required this.position,
+    required this.duration,
+  });
+
+  factory SimplePodcastEntity.fromJson(Map<String, dynamic> json) {
+    return SimplePodcastEntity(
+        title: json['title'] ?? '',
+        subtitle: json['subtitle'] ?? '',
+        artUrl: json['artUrl'] ?? '',
+        streamUrl: json['streamUrl'] ?? '',
+        position: json['position'] ?? 0,
+        duration: json['duration'] ?? 0);
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['title'] = title;
+    data['subtitle'] = subtitle;
+    data['artUrl'] = artUrl;
+    data['streamUrl'] = streamUrl;
+    data['position'] = position;
+    data['duration'] = duration;
+
+    return data;
+  }
+
+  SimplePodcastEntity copyWith({
+    String? title,
+    String? subtitle,
+    String? artUrl,
+    String? streamUrl,
+    int? position,
+    int? duration,
+  }) {
+    return SimplePodcastEntity(
+        title: title ?? this.title,
+        subtitle: subtitle ?? this.subtitle,
+        artUrl: artUrl ?? this.artUrl,
+        streamUrl: streamUrl ?? this.streamUrl,
+        position: position ?? this.position,
+        duration: duration ?? this.duration);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! SimplePodcastEntity) return false;
+    if (other.title != title) return false;
+    if (other.subtitle != subtitle) return false;
+    if (other.artUrl != artUrl) return false;
+    if (other.streamUrl != streamUrl) return false;
+    if (other.position != position) return false;
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(title, subtitle, artUrl, streamUrl, position);
+}
+
 class CommandEntity {
   late final int cmdId;
   final ConnectedDeviceEntity sender;
   ConnectedDeviceEntity? target;
   int? channel;
   bool? play;
+  SimplePodcastEntity? simplePodcastEntity;
 
   /// true는 response를 의미한다.
   bool commandFinished;
 
-  CommandEntity({
-    int? existId,
-    required this.sender,
-    this.target,
-    this.channel,
-    this.play,
-    this.commandFinished = false,
-  }) {
+  CommandEntity(
+      {int? existId,
+      required this.sender,
+      this.target,
+      this.channel,
+      this.play,
+      this.commandFinished = false,
+      this.simplePodcastEntity}) {
     if (existId == null) {
       cmdId = Random().nextInt(999) + 1000;
     } else {
@@ -72,11 +145,14 @@ class CommandEntity {
     return CommandEntity(
       existId: json['cmdId'],
       sender: ConnectedDeviceEntity.fromJson(json['sender']),
-      target: json['target'] == null
+      target: (json['target'] == null)
           ? null
           : ConnectedDeviceEntity.fromJson(json['target']),
       channel: json['channel'],
       play: json['play'],
+      simplePodcastEntity: (json['simplePodcastEntity'] == null)
+          ? null
+          : SimplePodcastEntity.fromJson(json['simplePodcastEntity']),
       commandFinished: json['commandFinished'],
     );
   }
@@ -87,7 +163,7 @@ class CommandEntity {
     ConnectedDeviceEntity? target,
     int? channel,
     bool? play,
-    bool? getLastCtrl,
+    SimplePodcastEntity? simplePodcastEntity,
     bool? commandFinished,
   }) {
     return CommandEntity(
@@ -96,6 +172,7 @@ class CommandEntity {
       target: target ?? this.target,
       channel: channel ?? this.channel,
       play: play ?? this.play,
+      simplePodcastEntity: simplePodcastEntity ?? this.simplePodcastEntity,
       commandFinished: commandFinished ?? this.commandFinished,
     );
   }
@@ -109,6 +186,8 @@ class CommandEntity {
       if (channel != null) 'channel': channel,
       if (play != null) 'play': play,
       'commandFinished': commandFinished,
+      if (simplePodcastEntity != null)
+        'simplePodcastEntity': simplePodcastEntity!.toJson(),
     };
   }
 
@@ -122,6 +201,7 @@ class CommandEntity {
     if (target != other.target) return false;
     if (channel != other.channel) return false;
     if (play != other.play) return false;
+    if (simplePodcastEntity != other.simplePodcastEntity) return false;
     return true;
   }
 
@@ -132,6 +212,7 @@ class CommandEntity {
         target,
         channel,
         play,
+        simplePodcastEntity,
       );
 }
 
